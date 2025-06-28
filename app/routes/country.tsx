@@ -22,6 +22,19 @@ export async function clientLoader({params}: Route.LoaderArgs) {
 
 export default function Country({ loaderData }: Route.ComponentProps) {
     const loadData = loaderData || [];
+    if (!loadData.length) {
+        return (
+            <div>
+                <h2 className="text-2xl font-bold mb-6 text-gray-900">No data found for this state.</h2>
+                <h2>
+                    <Link to={`/countries/`} className="text-blue-600 hover:underline text-lg">
+                        Back to States
+                    </Link>
+                </h2>
+            </div>
+        );
+    }
+    
     return <div>
         <h2 className="text-2xl font-bold mb-6 text-gray-900">Hospital Beds in {loaderData[0].state} (2022)</h2>
         <h2 > 

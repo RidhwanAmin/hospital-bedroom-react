@@ -16,7 +16,7 @@ export async function clientLoader() {
 export default function Countries({ loaderData }: Route.ComponentProps) {
   const targetDate = "2022-01-01";
   const [search, setSearch] = useState("");
-  const loadData = loaderData || [];
+  const loadData = Array.isArray(loaderData) ? loaderData : [];
 
   const malaysiaEntry = loadData.find((entry: any) =>
     entry.date === targetDate && entry.state.toLowerCase() === "malaysia"
