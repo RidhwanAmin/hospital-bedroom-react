@@ -1,0 +1,96 @@
+import { Link } from "react-router";
+import type { Route } from "./+types/countries";
+import { useState } from "react";
+
+// Placeholder for a Malaysia map component
+function MalaysiaMap({ data, onRegionClick }: { data: any[], onRegionClick: (state: string) => void }) {
+    const totalBedsMalaysia = data.reduce((acc, item) => acc + parseInt(item.beds, 10), 0);
+
+    return (
+        <svg viewBox="0 0 800 400" className="w-full h-auto">
+            {data.map((state, index) => {
+                const percentage = ((parseInt(state.beds, 10) / totalBedsMalaysia) * 100).toFixed(2);
+                return (
+                    <g
+                        key={state.state}
+                        onClick={() => onRegionClick(state.state)}
+                        className="cursor-pointer group"
+                        transform={`translate(${(index % 4) * 180}, ${Math.floor(index / 4) * 100})`}
+                    >
+                        <rect width="150" height="80" fill="#cce5ff" className="group-hover:fill-blue-300" />
+                        <text x="10" y="20" className="text-xs fill-black font-semibold">
+                            {state.state}
+                        </text>
+                        <title>
+                            {state.state}\nBeds: {state.beds}\n{percentage}% of national beds
+                        </title>
+                    </g>
+                );
+            })}
+        </svg>
+    );
+}
+
+export async function clientLoader() {
+    const res = await fetch('https://api.data.gov.my/data-catalogue/?id=hospital_beds');
+    const data = await res.json();
+    return data;
+}
+
+export default function Countries({ loaderData }: Route.ComponentProps) {
+    const targetDate = "2022-01-01";
+
+    const filteredStates = loaderData.filter((entry: any) =>
+        entry.date === targetDate &&
+        entry.state.toLowerCase() !== "malaysia" &&
+        entry.district.toLowerCase() === "all districts" &&
+        entry.type.toLowerCase() === "all"
+    );
+
+    const malaysiaEntry = loaderData.find((entry: any) =>
+        entry.date === targetDate &&
+        entry.state.toLowerCase() === "malaysia" &&
+        entry.district.toLowerCase() === "all" &&
+        entry.type.toLowerCase() === "all"
+    );
+
+    const totalBedsMalaysia = malaysiaEntry ? parseInt(malaysiaEntry.beds, 10) : 0;
+
+    const handleRegionClick = (state: string) => {
+        window.location.href = `/countries/${state.toLowerCase()}`;
+    };
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Left side - List */}
+            <div>
+                <h2 className="text-xl font-semibold mb-4">Hospital Beds by State (2022)</h2>
+                <ul className="space-y-4">
+                    {filteredStates.map((state: any) => {
+                        const stateBeds = parseInt(state.beds, 10);
+                        const percentage = ((stateBeds / totalBedsMalaysia) * 100).toFixed(2);
+
+                        return (
+                            <li key={state.state} className="border p-4 rounded-md shadow-sm">
+                                <Link
+                                    to={`/countries/${state.state.toLowerCase()}`}
+                                    className="text-blue-600 hover:underline text-lg"
+                                >
+                                    {state.state}
+                                </Link>
+                                <div>Number of beds: <strong>{stateBeds}</strong></div>
+                                <div>Percentage of national total: <strong>{percentage}%</strong></div>
+                            </li>
+                        );
+                    })}
+                </ul>
+            </div>
+
+            {/* Right side - Map */}
+            <div>
+                <h2 className="text-xl font-semibold mb-4">Map of Malaysia</h2>
+                <MalaysiaMap data={filteredStates} onRegionClick={handleRegionClick} />
+            </div>
+        </div>
+    );
+}

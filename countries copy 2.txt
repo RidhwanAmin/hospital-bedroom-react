@@ -1,0 +1,50 @@
+import { Link } from "react-router";
+import type { Route } from "./+types/countries";
+
+export async function clientLoader() {
+    const res = await fetch('https://api.data.gov.my/data-catalogue/?id=hospital_beds');
+    const data = await res.json();
+    return data;
+}
+
+export default function Countries({ loaderData }: Route.ComponentProps) {
+    const targetDate = "2022-01-01";
+
+    // Filter out Malaysian states (excluding "Malaysia" entry)
+    const filteredStates = loaderData.filter((entry: any) =>
+        entry.date === targetDate &&
+        entry.state.toLowerCase() !== "malaysia" &&
+        entry.district.toLowerCase() === "all districts" &&
+        entry.type.toLowerCase() === "all"
+    );
+
+    // Get the Malaysia-wide total entry
+    const malaysiaEntry = loaderData.find((entry: any) =>
+        entry.date === targetDate &&
+        entry.state.toLowerCase() === "malaysia"
+    );
+
+    const totalBedsMalaysia = malaysiaEntry ? parseInt(malaysiaEntry.beds, 10) : 0;
+
+    return (
+        <div>
+            <h2 className="text-xl font-semibold mb-4">Hospital Beds by State (2022)</h2>
+            <ul className="space-y-4">
+                {filteredStates.map((state: any) => {
+                    const stateBeds = parseInt(state.beds, 10);
+                    const percentage = ((stateBeds / totalBedsMalaysia) * 100).toFixed(2);
+
+                    return (
+                        <li key={state.state} className="border p-4 rounded-md shadow-sm">
+                            <Link to={`/countries/${state.state.toLowerCase()}`} className="text-blue-600 hover:underline text-lg">
+                                {state.state}
+                            </Link>
+                            <div>Number of beds: <strong>{stateBeds}</strong></div>
+                            <div>Percentage of national total: <strong>{percentage}%</strong></div>
+                        </li>
+                    );
+                })}
+            </ul>
+        </div>
+    );
+}
